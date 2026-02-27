@@ -4,6 +4,7 @@ mod email;
 mod engine;
 mod http;
 mod output;
+mod ratelimit;
 mod scrape;
 mod ua;
 mod variations;
@@ -358,6 +359,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     info!("Found {} sites to check", filtered_sites.len());
 
     let mut engine = SearchEngine::new(cli.timeout, cli.max_concurrent, cli.nsfw, cli.rotate_ua)?;
+
+    if let Some(rate_limit) = cli.rate_limit {
+        if rate_limit > 0 {
+            info!("Using rate limiting: {}ms between requests", rate_limit);
+            engine = engine.with_rate_limit(rate_limit);
+        }
+    }
 
     if cli.tor {
         info!("Using Tor for requests");

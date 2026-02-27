@@ -1,5 +1,6 @@
 use crate::data::{ErrorMessages, ErrorType, SiteInfo};
 use crate::http::HttpClient;
+use crate::ratelimit::RateLimiterHandle;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -78,6 +79,7 @@ pub struct SearchEngine {
     timeout: u64,
     max_concurrent: usize,
     include_nsfw: bool,
+    rate_limiter: Option<RateLimiterHandle>,
 }
 
 impl SearchEngine {
@@ -87,7 +89,15 @@ impl SearchEngine {
             timeout,
             max_concurrent,
             include_nsfw,
+            rate_limiter: None,
         })
+    }
+
+    pub fn with_rate_limit(mut self, rate_limit_ms: u64) -> Self {
+        if rate_limit_ms > 0 {
+            self.rate_limiter = Some(crate::ratelimit::create_rate_limiter(rate_limit_ms));
+        }
+        self
     }
 
     pub fn with_proxy(mut self, proxy: String) -> Self {
@@ -115,14 +125,27 @@ impl SearchEngine {
             .collect();
 
         let semaphore = Arc::new(Semaphore::new(self.max_concurrent));
+        let rate_limiter = self.rate_limiter.clone();
         let mut handles = Vec::new();
 
         for (site_name, site_info) in sites_to_check {
             let permit = semaphore.clone().acquire_owned().await.unwrap();
             let username = username.to_string();
             let http_client = self.http_client.clone();
+            let rate_limiter_clone = rate_limiter.clone();
 
             let handle = tokio::spawn(async move {
+                // Apply rate limiting if enabled
+                if let Some(ref rl) = rate_limiter_clone {
+                    let domain = site_info.url_main.clone();
+                    if let Ok(domain) = url::Url::parse(&domain) {
+                        if let Some(host) = domain.host_str() {
+                            let mut limiter = rl.write().await;
+                            limiter.wait_for(host).await;
+                        }
+                    }
+                }
+                
                 let result = check_site_internal(&http_client, &username, &site_name, &site_info).await;
                 drop(permit);
                 result

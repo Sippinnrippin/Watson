@@ -29,6 +29,10 @@ pub struct Cli {
     #[arg(long = "rate-limit")]
     pub rate_limit: Option<u64>,
 
+    /// Enable interactive TUI mode
+    #[arg(long = "tui")]
+    pub tui: bool,
+
     /// Email to search for
     #[arg(value_name = "EMAIL", short = 'm', long = "email")]
     pub email: Option<String>,

@@ -48,6 +48,12 @@ url = "2"
 # CSV output
 csv = "1"
 
+# TUI - Terminal UI
+ratatui = "0.26"
+
+# crossterm for terminal
+crossterm = "0.27"
+
 [features]
 default = ["custom"]
 custom = ["reqwest/default-tls"]
