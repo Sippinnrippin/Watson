@@ -1,0 +1,60 @@
+[package]
+name = "watson"
+version = "0.1.0"
+edition = "2021"
+description = "OSINT tool for username and email lookup"
+authors = ["Watson Team"]
+license = "MIT"
+repository = "https://github.com/watson-project/watson"
+
+[dependencies]
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# HTTP client
+reqwest = { version = "0.12", features = ["json", "socks", "blocking"] }
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Async concurrency
+futures = "0.3"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# Regex for pattern matching
+regex = "1"
+
+# Colored output
+colored = "2"
+
+# URL parsing
+url = "2"
+
+# CSV output
+csv = "1"
+
+[features]
+default = ["custom"]
+custom = ["reqwest/default-tls"]
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# Tor support on desktop
+tokio-socks = "0.5"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
