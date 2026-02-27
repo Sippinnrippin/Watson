@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  watson:
+    build: .
+    image: watson:latest
+    container_name: watson
+    volumes:
+      - ./output:/app/output
+    environment:
+      - RUST_LOG=info
+    entrypoint: ["watson"]
+    # Example: uncomment to run a search
+    # command: ["--help"]

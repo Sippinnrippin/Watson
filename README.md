@@ -60,6 +60,22 @@ Pre-built binaries:
 - 🐧 **Linux** (`watson`)
 - 🍎 **macOS** (`watson`)
 
+### Docker
+
+```bash
+# Build
+docker build -t watson:latest .
+
+# Or use docker-compose
+docker-compose build
+
+# Run a search
+docker run --rm watson -u username
+
+# Output to HTML
+docker run --rm -v $(pwd):/app/output watson -u username -f html -o output/results.html
+```
+
 ## 🚀 Running Watson
 
 ### Option 1: Run from release folder
