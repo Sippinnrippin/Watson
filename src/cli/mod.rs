@@ -30,11 +30,11 @@ pub struct Cli {
     pub tor: bool,
 
     /// Request timeout in seconds
-    #[arg(long = "timeout", default_value = "60")]
+    #[arg(long = "timeout", default_value = "15")]
     pub timeout: u64,
 
     /// Maximum concurrent requests
-    #[arg(long = "max-concurrent", default_value = "20")]
+    #[arg(long = "max-concurrent", default_value = "50")]
     pub max_concurrent: usize,
 
     /// Include NSFW sites in search

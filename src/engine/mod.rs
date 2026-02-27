@@ -121,10 +121,9 @@ impl SearchEngine {
             let permit = semaphore.clone().acquire_owned().await.unwrap();
             let username = username.to_string();
             let http_client = self.http_client.clone();
-            let timeout = self.timeout;
 
             let handle = tokio::spawn(async move {
-                let result = check_site_internal(&http_client, &username, &site_name, &site_info, timeout).await;
+                let result = check_site_internal(&http_client, &username, &site_name, &site_info).await;
                 drop(permit);
                 result
             });
@@ -253,7 +252,6 @@ async fn check_site_internal(
     username: &str,
     site_name: &str,
     site_info: &SiteInfo,
-    timeout: u64,
 ) -> Option<QueryResult> {
     if let Some(ref regex) = site_info.regex_check {
         if let Ok(re) = Regex::new(regex) {

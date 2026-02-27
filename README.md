@@ -28,14 +28,45 @@ cargo build --release
 
 The binary will be at `target/release/watson`
 
-### From Binary
+### From Binary (Recommended for quick use)
 
 Download the latest release from the [Releases](https://github.com/Sippinnrippin/Watson/releases) page.
 
 Pre-built binaries available for:
-- **Linux** (x86_64)
-- **macOS** (x86_64)
-- **Windows** (x86_64.exe)
+- **Linux** (`watson`)
+- **macOS** (`watson`)
+- **Windows** (`watson.exe`)
+
+## Running Watson
+
+### Option 1: Run from release folder
+
+If you downloaded the binary, run it with `./`:
+
+```bash
+./watson -u username
+```
+
+### Option 2: Add to PATH (run from anywhere)
+
+Add this line to your `~/.bashrc` or `~/.zshrc`:
+
+```bash
+export PATH="$PATH:/path/to/Watson/target/release"
+```
+
+Then restart your terminal and run:
+
+```bash
+watson -u username
+```
+
+### Option 3: Install with Cargo
+
+```bash
+cargo install --path .
+watson -u username
+```
 
 ## Usage
 
@@ -43,6 +74,20 @@ Pre-built binaries available for:
 
 ```bash
 watson -u username
+```
+
+### Performance Tips
+
+For faster searches, use the `--local` flag to skip fetching site data from GitHub:
+
+```bash
+watson -u username --local
+```
+
+To limit to specific sites (much faster):
+
+```bash
+watson -u username --site github --site twitter --site instagram --local
 ```
 
 ### Email Search

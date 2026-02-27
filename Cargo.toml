@@ -1,11 +1,11 @@
 [package]
 name = "watson"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
-description = "OSINT tool for username and email lookup"
+description = "Blazing fast OSINT tool for username and email lookup"
 authors = ["Watson Team"]
 license = "MIT"
-repository = "https://github.com/watson-project/watson"
+repository = "https://github.com/Sippinnrippin/Watson"
 
 [dependencies]
 # Async runtime
