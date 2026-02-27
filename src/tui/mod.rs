@@ -1,8 +1,5 @@
 use crate::engine::ProgressUpdate;
-use crossterm::{
-    event::{self, Event, KeyCode, KeyEventKind},
-    execute,
-};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
@@ -24,6 +21,7 @@ pub struct TUIState {
     pub results: Arc<Mutex<Vec<(String, String)>>>,
     pub current_site: Arc<Mutex<String>>,
     pub start_time: Arc<Mutex<Instant>>,
+    pub scroll_position: Arc<AtomicUsize>,
 }
 
 impl TUIState {
@@ -36,6 +34,7 @@ impl TUIState {
             results: Arc::new(Mutex::new(Vec::new())),
             current_site: Arc::new(Mutex::new(String::new())),
             start_time: Arc::new(Mutex::new(Instant::now())),
+            scroll_position: Arc::new(AtomicUsize::new(0)),
         }
     }
 
@@ -62,6 +61,22 @@ impl TUIState {
         }
     }
 
+    pub fn scroll_up(&self) {
+        let current = self.scroll_position.load(Ordering::Relaxed);
+        if current > 0 {
+            self.scroll_position.fetch_sub(1, Ordering::Relaxed);
+        }
+    }
+
+    pub fn scroll_down(&self) {
+        let results_len = self.results.lock().unwrap().len();
+        let current = self.scroll_position.load(Ordering::Relaxed);
+        // Show 15 items at a time, allow scrolling up to results_len - 15
+        if current < results_len.saturating_sub(15) {
+            self.scroll_position.fetch_add(1, Ordering::Relaxed);
+        }
+    }
+
     pub fn stop(&self) {
         self.is_running.store(false, Ordering::Relaxed);
     }
@@ -82,7 +97,7 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
                 .constraints([
                     Constraint::Length(3),
                     Constraint::Length(4),
-                    Constraint::Min(8),
+                    Constraint::Min(18),
                     Constraint::Length(5),
                 ])
                 .split(size);
@@ -108,24 +123,27 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
                 .percent(progress);
             f.render_widget(progress_bar, chunks[1]);
 
-            // Results list
+            // Results list with scrollbar
             let results = state.results.lock().unwrap();
+            let scroll_pos = state.scroll_position.load(Ordering::Relaxed);
+            let max_visible = 15;
+
             let items: Vec<ListItem> = results
                 .iter()
-                .rev()
-                .take(12)
-                .map(|(site, url)| {
-                    ListItem::new(format!("[✓] {}: {}", site, url))
-                        .style(Style::default().fg(Color::Green))
+                .skip(scroll_pos)
+                .take(max_visible)
+                .enumerate()
+                .map(|(i, (site, url))| {
+                    let line = format!("[{}] {}: {}", scroll_pos + i + 1, site, url);
+                    ListItem::new(line).style(Style::default().fg(Color::Green))
                 })
                 .collect();
 
             let results_list = List::new(items)
-                .block(
-                    Block::default()
-                        .borders(Borders::ALL)
-                        .title(" Found Accounts "),
-                )
+                .block(Block::default().borders(Borders::ALL).title(format!(
+                    " Found Accounts ({} results) - Use ↑/↓ to scroll ",
+                    results.len()
+                )))
                 .style(Style::default().fg(Color::White));
 
             f.render_widget(results_list, chunks[2]);
@@ -137,7 +155,7 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
             let current_site = state.current_site.lock().unwrap().clone();
             let status_text = if current_site.is_empty() {
                 format!(
-                    "Found: {} | Elapsed: {} | Status: {}",
+                    "Found: {} | Elapsed: {} | Status: {} | ↑↓ Scroll",
                     state.found_results.load(Ordering::Relaxed),
                     elapsed_str,
                     if state.is_running.load(Ordering::Relaxed) {
@@ -148,7 +166,7 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
                 )
             } else {
                 format!(
-                    "Found: {} | Elapsed: {} | Current: {}",
+                    "Found: {} | Elapsed: {} | Current: {} | ↑↓ Scroll",
                     state.found_results.load(Ordering::Relaxed),
                     elapsed_str,
                     current_site
@@ -161,15 +179,35 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
             f.render_widget(status, chunks[3]);
         })?;
 
+        // Handle keyboard input for scrolling
+        if event::poll(std::time::Duration::from_millis(0)).unwrap_or(false) {
+            if let Ok(Event::Key(key)) = event::read() {
+                if key.kind == KeyEventKind::Press {
+                    match key.code {
+                        KeyCode::Up => {
+                            state.scroll_up();
+                        }
+                        KeyCode::Down => {
+                            state.scroll_down();
+                        }
+                        KeyCode::Char('q') => {
+                            state.stop();
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+
         // Check for Ctrl+C
         if event::poll(std::time::Duration::from_millis(0)).unwrap_or(false) {
-            if let Event::Key(key) = event::read().unwrap_or(Event::FocusGained) {
+            if let Ok(Event::Key(key)) = event::read() {
                 if key.kind == KeyEventKind::Press
                     && key.code == KeyCode::Char('c')
                     && event::KeyModifiers::CONTROL.contains(key.modifiers)
                 {
                     state.stop();
-                    // Show interrupt message
                     let _ = terminal.draw(|f| {
                         let size = f.size();
                         let msg = Paragraph::new("\n\n⚠️  Search interrupted by user (Ctrl+C)\n")
@@ -197,7 +235,7 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
             .constraints([
                 Constraint::Length(3),
                 Constraint::Length(4),
-                Constraint::Min(8),
+                Constraint::Min(18),
                 Constraint::Length(5),
             ])
             .split(size);
@@ -221,11 +259,17 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
         f.render_widget(summary, chunks[1]);
 
         let results = state.results.lock().unwrap();
+        let scroll_pos = state.scroll_position.load(Ordering::Relaxed);
+        let max_visible = 15;
+
         let items: Vec<ListItem> = results
             .iter()
-            .map(|(site, url)| {
-                ListItem::new(format!("[✓] {}: {}", site, url))
-                    .style(Style::default().fg(Color::Green))
+            .skip(scroll_pos)
+            .take(max_visible)
+            .enumerate()
+            .map(|(i, (site, url))| {
+                let line = format!("[{}] {}: {}", scroll_pos + i + 1, site, url);
+                ListItem::new(line).style(Style::default().fg(Color::Green))
             })
             .collect();
 
@@ -233,7 +277,7 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
             .block(
                 Block::default()
                     .borders(Borders::ALL)
-                    .title(" Found Accounts "),
+                    .title(format!(" Found Accounts ({} total) ", results.len())),
             )
             .style(Style::default().fg(Color::White));
 
