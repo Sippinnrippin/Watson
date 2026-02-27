@@ -81,9 +81,9 @@ pub struct SearchEngine {
 }
 
 impl SearchEngine {
-    pub fn new(timeout: u64, max_concurrent: usize, include_nsfw: bool) -> Result<Self, reqwest::Error> {
+    pub fn new(timeout: u64, max_concurrent: usize, include_nsfw: bool, rotate_ua: bool) -> Result<Self, reqwest::Error> {
         Ok(Self {
-            http_client: HttpClient::new(timeout)?,
+            http_client: HttpClient::new(timeout, rotate_ua)?,
             timeout,
             max_concurrent,
             include_nsfw,

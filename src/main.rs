@@ -5,6 +5,8 @@ mod engine;
 mod http;
 mod output;
 mod scrape;
+mod ua;
+mod variations;
 
 use clap::Parser;
 use cli::{Cli, OutputFormat};
@@ -16,6 +18,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
 use tracing::info;
+use variations::generate_variations;
 
 fn load_sites_data(local: bool) -> Result<HashMap<String, data::SiteInfo>, Box<dyn std::error::Error>> {
     let data = if local {
@@ -77,6 +80,7 @@ async fn run_email_search(
     max_concurrent: usize,
     proxy: Option<&str>,
     tor: bool,
+    rotate_ua: bool,
 ) -> Result<Vec<QueryResult>, Box<dyn std::error::Error>> {
     use crate::email::get_email_services;
     use crate::http::HttpClient;
@@ -86,7 +90,7 @@ async fn run_email_search(
     let services = get_email_services();
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
     
-    let mut http_client = HttpClient::new(timeout)?;
+    let mut http_client = HttpClient::new(timeout, rotate_ua)?;
     if tor {
         http_client = http_client.with_tor();
     } else if let Some(p) = proxy {
@@ -217,6 +221,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             cli.max_concurrent,
             cli.proxy.as_deref(),
             cli.tor,
+            cli.rotate_ua,
         ).await?;
 
         let claimed_count = results.iter().filter(|r| r.is_claimed()).count();
@@ -280,15 +285,47 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     };
 
-    if cli.username.is_none() && cli.email.is_none() {
-        eprintln!("Error: Please specify either --username or --email");
+    if cli.username.is_none() && cli.email.is_none() && cli.file.is_none() {
+        eprintln!("Error: Please specify either --username, --file, or --email");
         eprintln!("Use watson --help for usage information");
         return Ok(());
     }
 
-    if cli.username.is_some() && cli.email.is_some() {
-        eprintln!("Error: Cannot use both --username and --email at the same time");
+    if (cli.username.is_some() || cli.file.is_some()) && cli.email.is_some() {
+        eprintln!("Error: Cannot use --username/--file and --email at the same time");
         return Ok(());
+    }
+
+    // Determine usernames to search
+    let mut usernames_to_search: Vec<String> = vec![];
+
+    if let Some(ref file_path) = cli.file {
+        // Load usernames from file
+        match fs::read_to_string(file_path) {
+            Ok(content) => {
+                let users: Vec<String> = content
+                    .lines()
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+                if users.is_empty() {
+                    eprintln!("Error: No usernames found in file");
+                    return Ok(());
+                }
+                usernames_to_search = users;
+            }
+            Err(e) => {
+                eprintln!("Error: Could not read file: {}", e);
+                return Ok(());
+            }
+        }
+    } else if let Some(ref username) = cli.username {
+        if cli.variations {
+            println!("Generating username variations...");
+            usernames_to_search = generate_variations(username);
+        } else {
+            usernames_to_search = vec![username.clone()];
+        }
     }
 
     if let Some(ref username) = cli.username {
@@ -320,7 +357,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Found {} sites to check", filtered_sites.len());
 
-    let mut engine = SearchEngine::new(cli.timeout, cli.max_concurrent, cli.nsfw)?;
+    let mut engine = SearchEngine::new(cli.timeout, cli.max_concurrent, cli.nsfw, cli.rotate_ua)?;
 
     if cli.tor {
         info!("Using Tor for requests");
@@ -332,11 +369,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let tor_used = engine.is_using_tor();
 
-    println!("\nSearching for username: {}", username);
-    
-    let results = engine.search_username(&username, &filtered_sites).await;
-    
-    let report = SearchReport::new(username.clone(), results, tor_used);
+    // Search for all usernames
+    for username in usernames_to_search {
+        println!("\nSearching for username: {}", username);
+        
+        let results = engine.search_username(&username, &filtered_sites).await;
+        
+        let report = SearchReport::new(username.clone(), results, tor_used);
 
     if cli.scrape_emails {
         let claimed_results: Vec<(String, String)> = report.results
@@ -347,7 +386,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         if !claimed_results.is_empty() {
             println!("\nScraping profiles for emails...");
-            let email_results = scrape_emails_from_results(claimed_results, cli.timeout).await;
+            let email_results = scrape_emails_from_results(claimed_results, cli.timeout, cli.rotate_ua).await;
 
             let mut emails_found = false;
             for (site_name, profile_url, emails) in email_results {
@@ -389,6 +428,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     
     if let Some(ref output) = cli.output {
         handle_output(&report, &cli.format, Some(output))?;
+    }
     }
 
     Ok(())

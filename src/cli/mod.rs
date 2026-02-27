@@ -9,9 +9,25 @@ pub struct Cli {
     #[arg(value_name = "USERNAME", short = 'u', long = "username")]
     pub username: Option<String>,
 
+    /// File containing usernames to search (one per line)
+    #[arg(long = "file", short = 'F')]
+    pub file: Option<String>,
+
+    /// Generate username variations
+    #[arg(long = "variations")]
+    pub variations: bool,
+
     /// Scrape found profiles for emails
-    #[arg(long = "emails", short = 'e')]
+    #[arg(long = "emails")]
     pub scrape_emails: bool,
+
+    /// Rotate User-Agent to avoid detection
+    #[arg(long = "rotate-ua")]
+    pub rotate_ua: bool,
+
+    /// Rate limit in milliseconds between requests to same domain
+    #[arg(long = "rate-limit")]
+    pub rate_limit: Option<u64>,
 
     /// Email to search for
     #[arg(value_name = "EMAIL", short = 'm', long = "email")]
@@ -58,7 +74,7 @@ pub struct Cli {
     pub local: bool,
 
     /// Site to search (can be specified multiple times)
-    #[arg(short = 'e', long = "site")]
+    #[arg(long = "site")]
     pub site: Option<Vec<String>>,
 
     /// Enable verbose output
