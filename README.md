@@ -2,6 +2,22 @@
 
 Blazing fast OSINT tool for finding usernames and emails across 400+ social networks. Built in Rust with concurrent requests, proxy/Tor support, and multiple output formats. Special thanks to the devs over at https://github.com/sherlock-project/sherlock for their inspiration!
 
+## Disclaimer
+
+**Watson is intended for legitimate security research, penetration testing, and educational purposes only.**
+
+**You are solely responsible for your actions while using this tool.**
+
+The creator of Watson does not condone, encourage, or endorse any illegal or unethical use of this software. Using this tool to access accounts without authorization or for malicious purposes may violate laws and regulations, including computer crime laws.
+
+By using Watson, you agree to:
+- Use the tool only for lawful purposes
+- Respect the privacy and consent of others
+- Comply with all applicable laws and regulations
+- Not use this tool for unauthorized access or harassment
+
+The creator assumes no liability for any damages, legal consequences, or misuse of this tool.
+
 ## Overview
 
 Watson is a powerful OSINT (Open Source Intelligence) tool for finding usernames across social networks. Inspired by Sherlock, it provides fast and efficient username searching with support for proxies and Tor.
@@ -15,22 +31,6 @@ Watson is a powerful OSINT (Open Source Intelligence) tool for finding usernames
 - **Multiple Output Formats**: JSON, CSV, HTML report, text
 - **Fast**: Built with Rust for optimal performance
 - **Local/Remote Data**: Use local data file or fetch from GitHub
-
-## Disclaimer
-
-Watson is intended for legitimate security research, penetration testing, and educational purposes only.
-
-**You are solely responsible for your actions while using this tool.**
-
-The creator of Watson does not condone, encourage, or endorse any illegal or unethical use of this software. Using this tool to access accounts without authorization or for malicious purposes may violate laws and regulations, including computer crime laws.
-
-By using Watson, you agree to:
-- Use the tool only for lawful purposes
-- Respect the privacy and consent of others
-- Comply with all applicable laws and regulations
-- Not use this tool for unauthorized access or harassment
-
-The creator assumes no liability for any damages, legal consequences, or misuse of this tool.
 
 ## Installation
 
