@@ -9,6 +9,10 @@ pub struct Cli {
     #[arg(value_name = "USERNAME", short = 'u', long = "username")]
     pub username: Option<String>,
 
+    /// Scrape found profiles for emails
+    #[arg(long = "emails", short = 'e')]
+    pub scrape_emails: bool,
+
     /// Email to search for
     #[arg(value_name = "EMAIL", short = 'm', long = "email")]
     pub email: Option<String>,

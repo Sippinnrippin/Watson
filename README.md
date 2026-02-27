@@ -102,6 +102,14 @@ watson -m user@example.com
 watson -u username --site github --site twitter
 ```
 
+### Scrape Emails from Profiles
+
+Search for username and scrape found profiles for email addresses:
+
+```bash
+watson -u username --emails
+```
+
 ### Using Proxy
 
 ```bash

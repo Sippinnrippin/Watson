@@ -4,12 +4,14 @@ mod email;
 mod engine;
 mod http;
 mod output;
+mod scrape;
 
 use clap::Parser;
 use cli::{Cli, OutputFormat};
 use data::SitesData;
 use engine::{QueryResult, SearchEngine};
 use output::SearchReport;
+use scrape::scrape_emails_from_results;
 use std::collections::HashMap;
 use std::fs;
 use std::io::Write;
@@ -335,6 +337,35 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let results = engine.search_username(&username, &filtered_sites).await;
     
     let report = SearchReport::new(username.clone(), results, tor_used);
+
+    if cli.scrape_emails {
+        let claimed_results: Vec<(String, String)> = report.results
+            .iter()
+            .filter(|r| r.is_claimed())
+            .map(|r| (r.site_name.clone(), r.profile_url.clone()))
+            .collect();
+
+        if !claimed_results.is_empty() {
+            println!("\nScraping profiles for emails...");
+            let email_results = scrape_emails_from_results(claimed_results, cli.timeout).await;
+
+            let mut emails_found = false;
+            for (site_name, profile_url, emails) in email_results {
+                if let Some(email_list) = emails {
+                    if !email_list.is_empty() {
+                        emails_found = true;
+                        for email in email_list {
+                            println!("[+] {}: {} -> Email: {}", site_name, profile_url, email);
+                        }
+                    }
+                }
+            }
+
+            if !emails_found {
+                println!("No emails found on profiles.");
+            }
+        }
+    }
     
     if cli.print_found {
         for result in &report.results {
