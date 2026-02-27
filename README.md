@@ -1,38 +1,46 @@
-# Watson
+# ⚡ Watson
 
-Blazing fast OSINT tool for finding usernames and emails across 400+ social networks. Built in Rust with concurrent requests, proxy/Tor support, and multiple output formats. Special thanks to the devs over at https://github.com/sherlock-project/sherlock for their inspiration!
+> Blazing fast OSINT tool for finding usernames and emails across 400+ social networks.
 
-## Disclaimer
+Built in Rust with concurrent requests, proxy/Tor support, and multiple output formats.
 
-**Watson is intended for legitimate security research, penetration testing, and educational purposes only.**
+---
 
-**You are solely responsible for your actions while using this tool.**
+> ⚠️ **DISCLAIMER**
+> 
+> **Watson is intended for legitimate security research, penetration testing, and educational purposes only.**
+> 
+> **You are solely responsible for your actions while using this tool.**
+> 
+> The creator of Watson does not condone, encourage, or endorse any illegal or unethical use of this software. Using this tool to access accounts without authorization or for malicious purposes may violate laws and regulations, including computer crime laws.
+> 
+> By using Watson, you agree to:
+> - ✅ Use the tool only for lawful purposes
+> - ✅ Respect the privacy and consent of others
+> - ✅ Comply with all applicable laws and regulations
+> - ❌ Not use this tool for unauthorized access or harassment
+> 
+> **The creator assumes no liability for any damages, legal consequences, or misuse of this tool.**
 
-The creator of Watson does not condone, encourage, or endorse any illegal or unethical use of this software. Using this tool to access accounts without authorization or for malicious purposes may violate laws and regulations, including computer crime laws.
+---
 
-By using Watson, you agree to:
-- Use the tool only for lawful purposes
-- Respect the privacy and consent of others
-- Comply with all applicable laws and regulations
-- Not use this tool for unauthorized access or harassment
+## 📖 Overview
 
-The creator assumes no liability for any damages, legal consequences, or misuse of this tool.
+Watson is a powerful OSINT (Open Source Intelligence) tool for finding usernames across social networks. Inspired by [Sherlock](https://github.com/sherlock-project/sherlock), it provides fast and efficient username searching with support for proxies and Tor.
 
-## Overview
+## ✨ Features
 
-Watson is a powerful OSINT (Open Source Intelligence) tool for finding usernames across social networks. Inspired by Sherlock, it provides fast and efficient username searching with support for proxies and Tor.
+| Feature | Description |
+|---------|-------------|
+| 🔍 **Username Search** | Check 400+ sites for username existence |
+| 📧 **Email Lookup** | Search for emails across services |
+| 🌐 **Proxy Support** | HTTP/HTTPS/SOCKS proxy support |
+| 🧅 **Tor Support** | Route requests through Tor network |
+| 📄 **Multiple Outputs** | JSON, CSV, HTML report, text |
+| ⚡ **Fast** | Built with Rust for optimal performance |
+| 💾 **Local/Remote** | Use local data file or fetch from GitHub |
 
-## Features
-
-- **Username Search**: Check 400+ sites for username existence
-- **Email Lookup**: Search for emails across services
-- **Proxy Support**: HTTP/HTTPS/SOCKS proxy support
-- **Tor Support**: Route requests through Tor network
-- **Multiple Output Formats**: JSON, CSV, HTML report, text
-- **Fast**: Built with Rust for optimal performance
-- **Local/Remote Data**: Use local data file or fetch from GitHub
-
-## Installation
+## 📦 Installation
 
 ### From Source
 
@@ -44,46 +52,30 @@ cargo build --release
 
 The binary will be at `target/release/watson`
 
-### From Binary (Recommended for quick use)
+### From Binary
 
 Download the latest release from the [Releases](https://github.com/Sippinnrippin/Watson/releases) page.
 
-Pre-built binaries available for:
-- **Linux** (`watson`)
-- **macOS** (`watson`)
+Pre-built binaries:
+- 🐧 **Linux** (`watson`)
+- 🍎 **macOS** (`watson`)
 
-## Running Watson
+## 🚀 Running Watson
 
 ### Option 1: Run from release folder
-
-If you downloaded the binary, run it with `./`:
 
 ```bash
 ./watson -u username
 ```
 
-### Option 2: Add to PATH (run from anywhere)
-
-Add this line to your `~/.bashrc` or `~/.zshrc`:
+### Option 2: Add to PATH
 
 ```bash
 export PATH="$PATH:/path/to/Watson/target/release"
-```
-
-Then restart your terminal and run:
-
-```bash
 watson -u username
 ```
 
-### Option 3: Install with Cargo
-
-```bash
-cargo install --path .
-watson -u username
-```
-
-## Usage
+## 💻 Usage
 
 ### Basic Usage
 
@@ -93,16 +85,16 @@ watson -u username
 
 ### Performance Tips
 
-For faster searches, use the `--local` flag to skip fetching site data from GitHub:
+For faster searches, use `--local`:
 
 ```bash
 watson -u username --local
 ```
 
-To limit to specific sites (much faster):
+To limit specific sites (much faster):
 
 ```bash
-watson -u username --site github --site twitter --site instagram --local
+watson -u username --site github twitter instagram --local
 ```
 
 ### Email Search
@@ -111,18 +103,16 @@ watson -u username --site github --site twitter --site instagram --local
 watson -m user@example.com
 ```
 
+### Scrape Emails from Profiles
+
+```bash
+watson -u username --emails
+```
+
 ### Search Specific Sites
 
 ```bash
 watson -u username --site github --site twitter
-```
-
-### Scrape Emails from Profiles
-
-Search for username and scrape found profiles for email addresses:
-
-```bash
-watson -u username --emails
 ```
 
 ### Using Proxy
@@ -140,20 +130,17 @@ watson -u username --tor
 ### Output Formats
 
 ```bash
-# JSON output
+# JSON
 watson -u username -f json -o results.json
 
-# CSV output
+# CSV
 watson -u username -f csv -o results.csv
 
-# HTML report
+# HTML
 watson -u username -f html -o results.html
-
-# Text output (default)
-watson -u username -o results.txt
 ```
 
-### Other Options
+## ⚙️ Other Options
 
 ```bash
 watson --help
@@ -165,101 +152,52 @@ Watson - OSINT username and email lookup tool
 Usage: watson [OPTIONS]
 
 Options:
-  -u, --username <USERNAME>
-          Username to search for
-
-  -m, --email <EMAIL>
-          Email to search for
-
-  -o, --output <FILE>
-          Output file path
-
-  -f, --format <FORMAT>
-          Output format (text, json, csv, html)
-
-          Possible values:
-          - text: Plain text output
-          - json: JSON output
-          - csv:  CSV output
-          - html: HTML report
-          
-          [default: text]
-
-  -p, --proxy <PROXY>
-          Proxy URL (e.g., socks5://127.0.0.1:1080)
-
-  -t, --tor
-          Use Tor for requests
-
-      --timeout <TIMEOUT>
-          Request timeout in seconds
-          
-          [default: 60]
-
-      --max-concurrent <MAX_CONCURRENT>
-          Maximum concurrent requests
-          
-          [default: 20]
-
-      --nsfw
-          Include NSFW sites
-
-  -a, --print-all
-          Print all results (including not found)
-
-  -s, --print-found
-          Print only found results
-
-  -l, --local
-          Use local data file
-
-  -e, --site <SITE>
-          Site to search (can be specified multiple times)
-
-  -v, --verbose
-          Enable verbose output
-
-      --list-sites
-          List supported sites
-
-  -h, --help
-          Print help (see a summary with '-h')
-
-  -V, --version
-          Print version
+  -u, --username <USERNAME>    Username to search for
+  -m, --email <EMAIL>        Email to search for
+  -e, --emails                 Scrape found profiles for emails
+  -o, --output <FILE>         Output file path
+  -f, --format <FORMAT>       Output format (text, json, csv, html)
+  -p, --proxy <PROXY>        Proxy URL
+  -t, --tor                    Use Tor for requests
+  --timeout <TIMEOUT>          Request timeout (default: 15)
+  --max-concurrent <N>         Max concurrent (default: 50)
+  --nsfw                       Include NSFW sites
+  -a, --print-all             Print all results
+  -s, --print-found           Print only found results
+  -l, --local                 Use local data file
+  -v, --verbose               Verbose output
+  --list-sites                List supported sites
+  -h, --help                  Print help
 ```
 
-## Data
-
-Watson uses the same site data as Sherlock, which is fetched from:
-https://github.com/sherlock-project/sherlock
-
-You can use the local data file (`data/sites.json`) by passing the `-l` flag.
-
-## Building
+## 🔨 Building
 
 ### Requirements
 
 - Rust 1.70+
 - Cargo
 
-### Build Commands
+### Commands
 
 ```bash
-# Debug build
+# Debug
 cargo build
 
-# Release build (optimized)
+# Release
 cargo build --release
 
-# Run tests
+# Test
 cargo test
 ```
 
-## License
+## 📜 License
 
 MIT License
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
-- Special thanks to the devs over at https://github.com/sherlock-project/sherlock for their site data and inspiration
+Special thanks to the devs over at [sherlock-project](https://github.com/sherlock-project/sherlock) for their inspiration!
+
+---
+
+*Made with 🔥 by [Sippinnrippin](https://github.com/Sippinnrippin)*
