@@ -51,7 +51,6 @@ Download the latest release from the [Releases](https://github.com/Sippinnrippin
 Pre-built binaries available for:
 - **Linux** (`watson`)
 - **macOS** (`watson`)
-- **Windows** (`watson.exe`)
 
 ## Running Watson
 
@@ -256,38 +255,6 @@ cargo build --release
 # Run tests
 cargo test
 ```
-
-### Building for Windows
-
-#### Option 1: Build on Windows (Recommended)
-
-Install Rust on Windows, then run in CMD or PowerShell:
-
-```cmd
-# Install Rust (if not installed)
-rustup install stable
-
-# Build for Windows
-rustup target add x86_64-pc-windows-msvc
-cargo build --release
-```
-
-The executable will be at `target\release\watson.exe`
-
-#### Option 2: Cross-Compile from Linux/WSL2
-
-```bash
-# Install Windows target
-rustup target add x86_64-pc-windows-gnu
-
-# Install MinGW-w64
-sudo apt install mingw-w64
-
-# Cross-compile
-cargo build --target x86_64-pc-windows-gnu --release
-```
-
-The executable will be at `target/x86_64-pc-windows-gnu/release/watson.exe`
 
 ## License
 
