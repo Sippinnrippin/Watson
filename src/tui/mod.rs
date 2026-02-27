@@ -1,4 +1,8 @@
 use crate::engine::ProgressUpdate;
+use crossterm::{
+    event::{self, Event, KeyCode, KeyEventKind},
+    execute,
+};
 use ratatui::{
     backend::CrosstermBackend,
     layout::{Constraint, Direction, Layout},
@@ -156,6 +160,27 @@ pub fn run_tui(state: TUIState) -> io::Result<()> {
                 .block(Block::default().borders(Borders::ALL).title(" Status "));
             f.render_widget(status, chunks[3]);
         })?;
+
+        // Check for Ctrl+C
+        if event::poll(std::time::Duration::from_millis(0)).unwrap_or(false) {
+            if let Event::Key(key) = event::read().unwrap_or(Event::FocusGained) {
+                if key.kind == KeyEventKind::Press
+                    && key.code == KeyCode::Char('c')
+                    && event::KeyModifiers::CONTROL.contains(key.modifiers)
+                {
+                    state.stop();
+                    // Show interrupt message
+                    let _ = terminal.draw(|f| {
+                        let size = f.size();
+                        let msg = Paragraph::new("\n\n⚠️  Search interrupted by user (Ctrl+C)\n")
+                            .style(Style::default().fg(Color::Yellow).bold())
+                            .block(Block::default().borders(Borders::ALL));
+                        f.render_widget(msg, size);
+                    });
+                    break;
+                }
+            }
+        }
 
         if !state.is_running.load(Ordering::Relaxed) {
             break;
