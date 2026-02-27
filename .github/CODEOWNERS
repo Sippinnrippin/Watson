@@ -1,0 +1,5 @@
+# Codeowners
+# Auto-assign reviewer for all PRs
+
+# All files - require approval from maintainer
+* @Sippinnrippin
