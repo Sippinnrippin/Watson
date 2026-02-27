@@ -6,13 +6,14 @@ mod http;
 mod output;
 mod ratelimit;
 mod scrape;
+mod tui;
 mod ua;
 mod variations;
 
 use clap::Parser;
 use cli::{Cli, OutputFormat};
 use data::SitesData;
-use engine::{QueryResult, SearchEngine};
+use engine::{ProgressUpdate, QueryResult, SearchEngine};
 use output::SearchReport;
 use scrape::scrape_emails_from_results;
 use std::collections::HashMap;
@@ -377,6 +378,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let tor_used = engine.is_using_tor();
 
+    // TUI mode
+    if cli.tui {
+        use engine::ProgressCallback;
+        
+        let total_sites = filtered_sites.len();
+        let tui_state = tui::TUIState::new(total_sites);
+        
+        // Clone state for callback
+        let tui_state_for_callback = tui_state.clone();
+        
+        // Set up progress callback and add to engine
+        engine = engine.with_progress_callback(move |update| {
+            tui_state_for_callback.handle_progress(update);
+        });
+        
+        // Start TUI in background thread
+        let tui_handle = std::thread::spawn(move || {
+            let _ = tui::run_tui(tui_state);
+        });
+        
+        // Search for usernames
+        for username in usernames_to_search {
+            println!("\nSearching for username: {}", username);
+            let results = engine.search_username(&username, &filtered_sites).await;
+            let report = SearchReport::new(username.clone(), results, tor_used);
+            println!("Found {} results for {}", report.claimed_count, username);
+        }
+        
+        // Wait for TUI to finish
+        let _ = tui_handle.join();
+        
+        return Ok(());
+    }
+
+    // CLI mode (non-TUI)
     // Search for all usernames
     for username in usernames_to_search {
         println!("\nSearching for username: {}", username);

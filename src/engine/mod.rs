@@ -4,6 +4,16 @@ use crate::ratelimit::RateLimiterHandle;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::sync::Arc;
+
+pub type ProgressCallback = Arc<dyn Fn(ProgressUpdate) + Send + Sync>;
+
+#[derive(Debug, Clone)]
+pub enum ProgressUpdate {
+    Started { total: usize, username: String },
+    SiteChecked { site: String, url: String, found: bool },
+    Completed { total_found: usize },
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum QueryStatus {
@@ -80,6 +90,7 @@ pub struct SearchEngine {
     max_concurrent: usize,
     include_nsfw: bool,
     rate_limiter: Option<RateLimiterHandle>,
+    progress_callback: Option<ProgressCallback>,
 }
 
 impl SearchEngine {
@@ -90,7 +101,16 @@ impl SearchEngine {
             max_concurrent,
             include_nsfw,
             rate_limiter: None,
+            progress_callback: None,
         })
+    }
+
+    pub fn with_progress_callback<F>(mut self, callback: F) -> Self 
+    where
+        F: Fn(ProgressUpdate) + Send + Sync + 'static,
+    {
+        self.progress_callback = Some(Arc::new(callback));
+        self
     }
 
     pub fn with_rate_limit(mut self, rate_limit_ms: u64) -> Self {
@@ -124,8 +144,16 @@ impl SearchEngine {
             .map(|(name, info)| (name.clone(), info.clone()))
             .collect();
 
+        let total = sites_to_check.len();
+        
+        // Send started message
+        if let Some(ref callback) = self.progress_callback {
+            callback(ProgressUpdate::Started { total, username: username.to_string() });
+        }
+
         let semaphore = Arc::new(Semaphore::new(self.max_concurrent));
         let rate_limiter = self.rate_limiter.clone();
+        let callback = self.progress_callback.clone();
         let mut handles = Vec::new();
 
         for (site_name, site_info) in sites_to_check {
@@ -133,6 +161,7 @@ impl SearchEngine {
             let username = username.to_string();
             let http_client = self.http_client.clone();
             let rate_limiter_clone = rate_limiter.clone();
+            let callback_clone = callback.clone();
 
             let handle = tokio::spawn(async move {
                 // Apply rate limiting if enabled
@@ -147,6 +176,18 @@ impl SearchEngine {
                 }
                 
                 let result = check_site_internal(&http_client, &username, &site_name, &site_info).await;
+                
+                // Report progress
+                if let Some(ref cb) = callback_clone {
+                    if let Some(ref r) = result {
+                        cb(ProgressUpdate::SiteChecked {
+                            site: site_name.clone(),
+                            url: r.profile_url.clone(),
+                            found: r.is_claimed(),
+                        });
+                    }
+                }
+                
                 drop(permit);
                 result
             });
@@ -158,6 +199,12 @@ impl SearchEngine {
             if let Ok(Some(result)) = handle.await {
                 results.push(result);
             }
+        }
+
+        // Send completed message
+        if let Some(ref callback) = self.progress_callback {
+            let found = results.iter().filter(|r| r.is_claimed()).count();
+            callback(ProgressUpdate::Completed { total_found: found });
         }
 
         results
