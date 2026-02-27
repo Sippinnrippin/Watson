@@ -19,9 +19,10 @@ jobs:
           - os: macos-latest
             target: x86_64-apple-darwin
             binary: watson
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            binary: watson.exe
+          # Windows build disabled for now
+          # - os: windows-latest
+          #   target: x86_64-pc-windows-msvc
+          #   binary: watson.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -47,11 +48,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p release
-          if [ "${{ matrix.os }}" = "windows-latest" ]; then
-            cp target/${{ matrix.target }}/release/watson.exe release/
-          else
-            cp target/${{ matrix.target }}/release/watson release/
-          fi
+          cp target/${{ matrix.target }}/release/watson release/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
