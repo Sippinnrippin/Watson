@@ -1,6 +1,6 @@
 # Watson
 
-Blazing fast OSINT tool for finding usernames and emails across 400+ social networks. Built in Rust with concurrent requests, proxy/Tor support, and multiple output formats. Special thanks to the devs over at https://github.com/sherlock-project/sherlock for their site data and inspiration!
+Blazing fast OSINT tool for finding usernames and emails across 400+ social networks. Built in Rust with concurrent requests, proxy/Tor support, and multiple output formats. Special thanks to the devs over at https://github.com/sherlock-project/sherlock for their inspiration!
 
 ## Overview
 
